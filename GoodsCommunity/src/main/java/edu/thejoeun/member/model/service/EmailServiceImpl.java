@@ -62,7 +62,7 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(mimeMessage); // 이메일 발송
 
             authKeyStorage.put(email, authKey);
-            log.info("인증키 메모리 저장 완료 - 이메일 : {} ", email);
+            log.info("인증키 메모리 저장 완료 - 이메일 : {}, 인증번호 : {}", email, authKey);
         }catch (Exception e){
             e.printStackTrace();
             return null;

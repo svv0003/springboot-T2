@@ -20,7 +20,6 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @Configuration
 public class SecurityConfig {
 
-
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
@@ -67,13 +66,20 @@ public class SecurityConfig {
                 // 세션 관리 설정 추가
                 .sessionManagement(session -> session
                         .maximumSessions(1) // 동시 세션 1개만 허용
-                        .maxSessionsPreventsLogin(false) // 새 로그인 시 기존 세선 무효화
-                )
-
-                .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
-                        .permitAll()
+                        .maxSessionsPreventsLogin(false) // 새 로그인 시 기존 세 무효화
                 );
+
+                /*
+                SecurityConfig는 모든 API 경로에서 최우선 권한을 갖고 있다.
+                MemberAPIController에서 작동해야 하는 로그아웃 경로를
+                Security가 가로챈다.
+                -> MemberAPIController 로그아웃 동작하지 않는다.
+
+               .logout(logout -> logout
+                    .logoutUrl("/api/auth/logout")
+                    .permitAll()
+                );
+                 */
 
         return http.build();
     }

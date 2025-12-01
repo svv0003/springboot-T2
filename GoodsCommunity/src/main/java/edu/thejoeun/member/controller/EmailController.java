@@ -20,7 +20,8 @@ public class EmailController {
 
 
     @PostMapping("/signup") // api : /email/signup
-    public int signup(@RequestBody String email){
+    public int signup(@RequestBody Map<String, String> map){
+        String email = map.get("email");
         String authKey = emailService.sendMail("signup", email);
         if(authKey != null){
             return 1;
