@@ -1,6 +1,7 @@
 package edu.thejoeun.product.model.service;
 
 import edu.thejoeun.product.model.dto.Product;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public interface ProductService {
     void = 등록데이터의 유무만 확인 가능 성공 / 실패
      */
     // 상품 등록
-    void insertProduct(Product product);
+    void insertProduct(Product product, MultipartFile imageFile);
 
     // 상품 수정
     void updateProduct(Product product);

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -82,13 +83,39 @@ public class ProductController {
     }
 
 
+    /**
+     *
+     * @param product   @RequestPart() 내부에는 JS에서 지정한 변수명과 require 형태를 지정하여 작성할 수 있다.
+     *                  만일 아무것도 지정하지 않는다면 백엔드에서 사용하는 변수명과 프론트엔드에서 사용하는 변수명이 일치하고,
+     *                  모든 데이터를 필수로 전달받는 변수명이라는 표기
+     *                  @RequestPart("prdct" required=false) Product product
+     *                  @RequestPart(value = "prdct" required=false) Product product
+     *                  위 두개는 모두 동일한 형태이다.
+     *                  위와 같은 경우에는 프론트엔드에서 변수명이 prdct이고, 필수로 데이터를 가져와 product 내부에 추가하지 않아도 될 때 사용한다.
+     * @param imageFile 백엔드에서는 imageFile 변수명으로, 프론트엔드에서 가져온 imageFile 데이터를 전달받을 것이고,
+     *                  imageFile 데이터 값이 필수가 아니므로 required=false 설정하여 필수가 아님을 설정한다.
+     * @return          성공 결과를
+     *                  Map < String, Object >
+     *                  "success"   : boolean
+     *                  "message"   : 결과 메세지
+     *                  "productId" : 등록된 제품 ID
+     *                  형태로 프론트엔드로 반환할 것이다.
+     *                  프론트엔드에서는
+     *                  [백엔드 결과 변수명].data.success
+     *                  [백엔드 결과 변수명].data.message
+     *                  [백엔드 결과 변수명].data.productId
+     *                  형태로 사용할 수 있다.
+     */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> addProduct(@RequestBody Product product) {
+    // public ResponseEntity<Map<String, Object>> addProduct(@RequestBody Product product) {
+    public ResponseEntity<Map<String, Object>> addProduct(@RequestPart("product") Product product,
+                                                          @RequestPart(value="imageFile", required = false) MultipartFile imageFile) {
+        log.info("imageFile: ", imageFile);
         log.info("POST /api/product - 상품 등록", product.getProductName());
         Map<String, Object> res = new HashMap<>();
 
         try{
-            productService.insertProduct(product);
+            productService.insertProduct(product, imageFile);
             res.put("success",true);
             res.put("message","상품이 성공적으로 등록되었습니다.");
             res.put("productId", product.getId());
@@ -113,7 +140,7 @@ public class ProductController {
      * @param product 수정할 제품의 대하여 작성된 내용 모두 가져오기
      * @return        수정된 결과 클라이언트 전달
      */
-    @PutMapping("/{id}")
+    @PutMapping("/edit/{id}")
     public ResponseEntity<Map<String, Object>> upDateProduct(@PathVariable int id, @RequestBody Product product) {
         log.info("Put /api/product/{} - 상품 수정",id);
         Map<String, Object> res = new HashMap<>();

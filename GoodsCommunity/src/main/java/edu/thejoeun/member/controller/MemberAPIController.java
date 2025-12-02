@@ -74,7 +74,6 @@ public class MemberAPIController {
       } catch (Exception e){
           log.error("회원가입 실패 - 이메일 : {}, 에러 : {}",member.getMemberEmail(),e.getMessage());
         }
-
     }
 
 

@@ -1,12 +1,14 @@
 package edu.thejoeun.product.model.service;
 
 
+import edu.thejoeun.common.util.FileUploadService;
 import edu.thejoeun.product.model.dto.Product;
 import edu.thejoeun.product.model.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,6 +18,8 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
+    private final FileUploadService fileUploadService;
+
 
     /*
      public List<Product> getAllProducts() {
@@ -83,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
     // 상품에 대한 정보 저장 @Transactional 어노테이션이 필수로 붙어야 함
     @Override
     @Transactional
-    public void insertProduct(Product product) {
+    public void insertProduct(Product product, MultipartFile imageFile) {
         log.info("상품 등록 시작 - {}", product.getProductName());
         // 유효성 검사
         // void validateProduct(product);
@@ -95,15 +99,48 @@ public class ProductServiceImpl implements ProductService {
             log.warn("상품 코드 중복 - Code: {}", product.getProductCode());
             throw new IllegalArgumentException("이미 존재하는 상품입니다.");
         }
+        if(imageFile != null && !imageFile.isEmpty()) {
+            /**
+             * 이미지 파일이 있다면 함께 저장한다.
+             */
+            try {
+                /**
+                 * 상품 먼저 등록해서 productId 생성한다.
+                 */
+                int result = productMapper.insertProduct(product);
+                /**
+                 * DB에서 rows 행 추가 결과가 1개 이상이라면 insert문 성공했다는 뜻이다.
+                 */
+                if(result > 0) {
+                    String imageUrl = fileUploadService.uploadProductImage(imageFile, product.getId(), "main");
+                    /**
+                     * 이미지 URL을 product에 설정하고 업데이트한다.
+                     */
+                    product.setImageUrl(imageUrl);
+                    productMapper.updateProduct(product);
+                    log.info("상품 등록 완료 - ID : {}, Name : {}, ImageUrl : {}",
+                            product.getId(), product.getProductName(), imageUrl);
+                } else {
+                    log.error("상품 등록 실패 - {}", product.getProductName());
+                    throw new RuntimeException("상품 등록에 실패했습니다.");
+                }
 
-        int result = productMapper.insertProduct(product);
-        if(result > 0) {
-            log.info("상품 등록 완료 - ID : {}, Name : {}",product.getId(), product.getProductName());
+            }catch(Exception e) {
+                log.error("파일 업로드 실패 : ",e);
+                throw new RuntimeException("이미지 업로드에 실패했습니다.");
+            }
         } else {
-            log.error("상품 등록 실패 - {}", product.getProductName());
-            throw  new RuntimeException("상품 등록에 실패했습니다.");
+            /**
+             * 이미지가 없는 경우 상품 정보만 저장한다.
+             */
+            int result = productMapper.insertProduct(product);
+            if(result > 0) {
+                log.info("상품 등록 완료 - ID : {}, Name : {}",product.getId(), product.getProductName());
+            } else {
+                log.error("상품 등록 실패 - {}", product.getProductName());
+                throw  new RuntimeException("상품 등록에 실패했습니다.");
+            }
         }
-
     }
 
     @Override
