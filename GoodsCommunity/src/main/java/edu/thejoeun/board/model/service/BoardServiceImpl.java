@@ -3,12 +3,16 @@ package edu.thejoeun.board.model.service;
 
 import edu.thejoeun.board.model.dto.Board;
 import edu.thejoeun.board.model.mapper.BoardMapper;
+import edu.thejoeun.common.util.FileUploadService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BoardServiceImpl  implements BoardService {
@@ -17,6 +21,8 @@ public class BoardServiceImpl  implements BoardService {
     // Autowired 보다 RequiredArgsConstructor 처리해주는 것이
     // 상수화하여 Mapper 를 사용할 수 있으므로 안전 -> 내부 메서드나 데이터 변경 불가
     private final BoardMapper boardMapper;
+    private final FileUploadService fileUploadService;
+
 
     @Override
     public List<Board> getAllBoard() {
@@ -37,7 +43,32 @@ public class BoardServiceImpl  implements BoardService {
 
 
     @Override
-    public void createBoard(Board board) {
-        boardMapper.insertBoard(board);
+    public void createBoard(Board board, MultipartFile imageFile) {
+        if(imageFile != null && !imageFile.isEmpty()) {
+            try {
+                int result = boardMapper.insertBoard(board);
+                if(result > 0) {
+                    String imageUrl = fileUploadService.uploadBoardImage(imageFile, board.getId(), "main");
+                    board.setBoardImage(imageUrl);
+                    boardMapper.addBoardImage(board);
+                    log.info("게시물 등록 완료 - ID : {}, Title : {}, imageUrl : {}",
+                            board.getId(), board.getTitle(), imageUrl);
+                } else {
+                    log.error("게시물 등록 실패 - {}", board.getTitle());
+                    throw new RuntimeException("상품 등록에 실패했습니다.");
+                }
+            }catch(Exception e) {
+                log.error("게시물 업로드 실패 : ", e);
+                throw new RuntimeException("이미지 업로드에 실패했습니다.");
+            }
+        } else {
+            int result = boardMapper.insertBoard(board);
+            if(result > 0) {
+                log.info("상품 등록 완료 - ID : {}, Title : {}", board.getId(), board.getTitle());
+            } else {
+                log.error("상품 등록 실패 - {}", board.getTitle());
+                throw  new RuntimeException("상품 등록에 실패했습니다.");
+            }
+        }
     }
 }

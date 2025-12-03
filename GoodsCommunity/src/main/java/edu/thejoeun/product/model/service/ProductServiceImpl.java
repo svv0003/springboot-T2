@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -145,9 +146,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void updateProduct(Product product) {
+    public void updateProduct(Product product, MultipartFile imageFile) {
         log.info("상품 수정 시작 - {}", product.getId());
-
         // 상품이 존재하는지 확인
         Product existingProduct = productMapper.getProductById(product.getId());
         if(existingProduct == null) {
@@ -157,16 +157,33 @@ public class ProductServiceImpl implements ProductService {
         // 유효성 검사
         // void validateProduct(product);
         // 메서드를 만들어, 데이터를 저장하기 전에 백엔드에서 한 번 더 유효성 검사 진행
-
-        int result = productMapper.updateProduct(product);
-        if(result > 0) {
-            log.info("상품 수정 완료 - ID : {}",product.getId());
-        } else {
-            log.error("상품 수정 실패 ID : {}",product.getId());
+        try{
+            if(imageFile != null && !imageFile.isEmpty()) {
+                // 만약 기존 이미지 파일이 null일 수도 있기 때문에 사용한다.
+                if(existingProduct.getImageUrl() != null && !existingProduct.getImageUrl().isEmpty()) {
+                    boolean deleteExistingImageResult = fileUploadService.deleteFile(existingProduct.getImageUrl());
+                    if(deleteExistingImageResult) log.info("기존 이미지 삭제 성공 : {}", existingProduct.getImageUrl());
+                    else log.warn("기존 이미지 삭제 실패 : {}", existingProduct.getImageUrl());
+                }
+                String imageUrl = fileUploadService.uploadProductImage(imageFile, product.getId(), "main");
+                product.setImageUrl(imageUrl);
+            } else{
+                // 이미지를 수정하지 않은 경우 기본 이미지 유지
+                product.setImageUrl(existingProduct.getImageUrl());
+            }
+            int result = productMapper.updateProduct(product);
+            if(result > 0) {
+                log.info("상품 수정 완료 - ID : {}",product.getId());
+            } else {
+                log.error("상품 수정 실패 ID : {}",product.getId());
+                throw  new RuntimeException("상품 수정에 실패했습니다.");
+            }
+        } catch (Exception e) {
+            log.error("상품 수정 실패 ID : {}",e.getMessage());
             throw  new RuntimeException("상품 수정에 실패했습니다.");
         }
-
     }
+
     @Override
     @Transactional
     public void deleteProduct(int id) {

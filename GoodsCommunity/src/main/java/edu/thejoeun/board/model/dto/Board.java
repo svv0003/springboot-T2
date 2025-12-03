@@ -15,6 +15,7 @@ public class Board {
     private String title;
     private String content;
     private String writer;
+    private String boardImage;
     private int viewCount;
     private String createdAt;
     private String updatedAt;

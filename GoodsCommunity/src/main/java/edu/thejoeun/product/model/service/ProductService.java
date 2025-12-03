@@ -30,7 +30,7 @@ public interface ProductService {
     void insertProduct(Product product, MultipartFile imageFile);
 
     // 상품 수정
-    void updateProduct(Product product);
+    void updateProduct(Product product, MultipartFile imageFile);
 
     // 상품 삭제
     void deleteProduct(int id);

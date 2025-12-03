@@ -53,6 +53,9 @@ public class FileUploadService {
     @Value("${file.product.upload.path}")
     private String productUploadPath;
 
+    @Value("${file.board.upload.path}")
+    private String boardUploadPath;
+
     /*
     프로필이나 상품 이미지는 경로가 다르기 때문에 공통 기능으로 재사용하지 말고 각자 만드는 것을 권장한다.
      */
@@ -151,6 +154,30 @@ public class FileUploadService {
         return "/product_images/" + productId + "/" + fileNameWithExtension;
     }
 
+    public String uploadBoardImage(MultipartFile file, int boardId, String imageType) throws IOException {
+        if(file.isEmpty()){
+            throw new IOException("업로드할 파일이 없습니다.");
+        }
+        String boardFolder = boardUploadPath + "/" +  boardId;
+        File uploadDir = new File(boardFolder);
+        if(!uploadDir.exists()){
+            boolean created = uploadDir.mkdirs();
+            if(!created){
+                throw new IOException("업로드 디렉토리 생성에 실패했습니다. : " + boardFolder);
+            }
+            log.info("업로드 디렉토리 생성 : {}", boardFolder);
+        }
+        String fileNameWithExtension = imageType + getExtension(file);
+        Path savePath = Paths.get(boardFolder, fileNameWithExtension);
+        try {
+            Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("게시물 이미지 업로드 성공 : {} -> {}", file.getOriginalFilename(), fileNameWithExtension);
+        }catch (IOException e) {
+            log.error("파일 저장 중 오류 발생: {}", e.getMessage());
+        }
+        return "/board_images/" + boardId + "/" + fileNameWithExtension;
+    }
+
 
     private String getExtension(MultipartFile file) {
         String originalName = file.getOriginalFilename();
@@ -164,6 +191,80 @@ public class FileUploadService {
         }
         return "";
     }
+
+    // FileUploadService.java에 deleteFile 메서드를 만들어 기존 이미지 파일 삭제하기.
+
+    /**
+     * 파일 삭제하기
+     * @param filePath  DB에 저장된 파일 폴더 경로
+     * @return          삭제 성공 여부
+     */
+    public boolean deleteFile(String filePath) {
+        if(filePath == null || filePath.isEmpty()) {
+            log.warn("삭제할 파일 경로가 존재하지 않습니다.");
+            return false;
+        }
+        try {
+            /*
+            DB에 저장되어 있는 상대경로를 절대경로로 반환하여 처리한다.
+            현재 나의 컴퓨터에서 파일이 어디에 존재하는지 위치를 완벽히 확인하기 위한 작업으로,
+            uploadPath와 productUploadPath는 C:/ D:/ E:/, /부터 각 이미지 폴더까지 파일명 제외한
+            모든게 완벽하게 작성되어 있는 변수명으로,
+            DB에서 프로필을 사용하는 이미지인가, 제품에서 사용하는 이미지인가를 구문하기 위해 넣어준
+            /profile_images/, /product_images/를 제거하고, 본해 저잗뇌 상품 명칭만 가져오는 작업을 하여
+            기존 완벽한 경로 + "/" + 상품명 처리한다.
+             */
+            String absolutePath;
+            if(filePath.startsWith("/profile_images/")) {
+                String profilePath = filePath.replace("/profile_images/", "");
+                absolutePath = uploadPath + "/" + profilePath;
+            } else if (filePath.startsWith("/product_images/")) {
+                String productPath = filePath.replace("/product_images/", "");
+                absolutePath = productUploadPath + "/" + productPath;
+            } else {
+                log.warn("지원하지 않는 파일 경로 형식입니다. {}", filePath);
+                return false;
+            }
+            /*
+            위에서 만들어둔 프로필 사진이나 제품 메인 사진 중에서 삭제하고자 하는 파일의 경로와 명칭은
+            절대 경로 변수 내부에 저장되어 있다.
+             */
+            File file = new File(absolutePath);
+            /*
+            절대경로 + 파일 이름이 존재하는지 확인한다.
+             */
+            if(!file.exists()){
+                log.warn("삭제하려는 파일이 존재하지 않습니다. {}", absolutePath);
+                return false;
+            }
+            /*
+            파일 삭제
+            delete() 메서드의 결과는 true, false로 나온다.
+             */
+            boolean deleteFile = file.delete();
+            if(deleteFile){
+                log.info("파일 삭제 성공 : {}", absolutePath);
+                if(filePath.startsWith("/product_images/")){
+                    // 비어있는 상품 폴더 삭제하는 기능 활용
+                }
+            } else {
+                log.error("파일 삭제 실패 : {}", absolutePath);
+            }
+            return deleteFile;
+
+        } catch (Exception e) {
+            log.error("파일 삭제 중 오류 발생 : {}", e.getMessage());
+            return false;
+        }
+    }
+    /*
+    폴더를 명령어나 서버에서 삭제 시 순서 고려하기.
+    폴더 내부 파일이 존재하면 파일을 우선 삭제하고, 폴더 삭제를 진행한다.
+    폴더 내부 파일이 존재하는데 폴더만 삭제하는 것이 아니다.
+    여러 파일 한 번에 삭제
+    비어있는 폴더 삭제
+     */
+
 
 }
 

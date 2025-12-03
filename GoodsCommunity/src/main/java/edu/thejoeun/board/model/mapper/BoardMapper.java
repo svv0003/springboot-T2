@@ -2,6 +2,7 @@ package edu.thejoeun.board.model.mapper;
 
 import edu.thejoeun.board.model.dto.Board;
 import org.apache.ibatis.annotations.Mapper;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,7 +24,12 @@ public interface BoardMapper {
      * 작성한 게시물 저장
      * @param board 게시물 데이터 가져오기
      */
-    void insertBoard(Board board);
+    int insertBoard(Board board);
+
+    /**
+     * 게시물 사진 포함 업데이트
+     */
+    int addBoardImage(Board board);
 
     /**
      * 게시물 데이터 제목, 내용, 저자 수정불가, 업데이트 일자 변경

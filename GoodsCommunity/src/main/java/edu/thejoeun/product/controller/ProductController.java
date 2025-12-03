@@ -19,6 +19,7 @@ import java.util.Map;
 @RequestMapping("/api/product")
 @RequiredArgsConstructor
 public class ProductController {
+
     private final ProductService productService;
 
 
@@ -139,15 +140,24 @@ public class ProductController {
      * @param id      수정할 제품의 id 가져오기
      * @param product 수정할 제품의 대하여 작성된 내용 모두 가져오기
      * @return        수정된 결과 클라이언트 전달
+     *
+     * @RequestBody -> @RequestPart 변겅하여 product와 이미지 데이터 가져오기.
      */
     @PutMapping("/edit/{id}")
-    public ResponseEntity<Map<String, Object>> upDateProduct(@PathVariable int id, @RequestBody Product product) {
+    // public ResponseEntity<Map<String, Object>> upDateProduct(@PathVariable int id, @RequestBody Product product) {
+    public ResponseEntity<Map<String, Object>> upDateProduct(@PathVariable int id,
+                                                             // 데이터가 하나일 때는 기본값은 value
+                                                             @RequestPart("product") Product product,
+                                                             // 데이터가 두 개 이상일 때는 각각 어떤 속성을 참조하는지 작성한다.
+                                                             @RequestPart(value="imageUrl", required = false) MultipartFile imageFile) {
         log.info("Put /api/product/{} - 상품 수정",id);
+        log.info("상품 정보",product);
+        log.info("상품 이미지", imageFile != null ? imageFile.getOriginalFilename() : "이미지 변경 없음");
         Map<String, Object> res = new HashMap<>();
 
         try{
             product.setId(id);
-            productService.updateProduct(product);
+            productService.updateProduct(product, imageFile);
             res.put("success",true);
             res.put("message","상품이 성공적으로 수정되었습니다.");
             res.put("productId", product.getId());
@@ -232,7 +242,26 @@ public class ProductController {
             res.put("success",false);
             res.put("message","재고 업데이트 중 오류가 발생했습니다.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
-
         }
     }
 }
+
+/*
+@RequestBody
+JSON 같은 단일 글자 데이터를 받을 때 사용한다.
+multipart/form-data를 제대로 처리하지 못한다.
+-> 문자열 편지 보내기 (사진 절대 불가)
+
+@RequestParam
+하나의 파일 업로드는 가능하지만
+하나의 변수에서 하나씩만 가능하다.
+파일 1개만 받거나 매우 단순한 경우에는 가능하다.
+JSON과 같이 복잡한 body와 조합하기 어렵다.
+-> 사진 보내기 (편지 절대 불가)
+
+@RequestPart
+파일과 글자 데이터 또는 파일 다수와 같이
+모든 데이터를 파트 단위로 백엔드에서 나눠 받기 위해 만들어졌다.
+-> 종합 선물 상자 (사진+편지)
+=> 각 파트별로 구분해서 받기 때문에 깔끔하다.
+ */

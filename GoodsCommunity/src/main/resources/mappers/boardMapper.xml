@@ -31,10 +31,18 @@
     -->
     <insert id="insertBoard" parameterType="Board" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO board(title, content, writer)
-              VALUES (#{title}, #{content}, #{writer} )
+              VALUES (#{title}, #{content}, #{writer})
     </insert>
+    <update id="addBoardImage" parameterType="Board">
+        UPDATE board
+        SET title = #{title},
+        content = #{content},
+        writer = #{writer},
+        board_image = #{boardImage}
+        WHERE id = #{id}
+    </update>
     <update id="updateViewCount" parameterType="int">
-        UPDATE  board
+        UPDATE board
         SET view_count = view_count + 1
         WHERE id = #{id}
     </update>

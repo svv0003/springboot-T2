@@ -5,10 +5,14 @@ import edu.thejoeun.board.model.dto.Board;
 import edu.thejoeun.board.model.mapper.BoardMapper;
 import edu.thejoeun.board.model.service.BoardService;
 import edu.thejoeun.common.scheduling.Service.SchedulingService;
+import edu.thejoeun.product.model.dto.Product;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -46,22 +50,38 @@ public class BoardController {
     }
 
     @PostMapping  // api endpoint = /api/board 맨 위에 작성한 requestMapping 해당
-    public void createBoard(@RequestBody Board board){
+    public void createBoard(@RequestPart("board") Board board,
+                            @RequestPart(value="imageFile", required=false) MultipartFile imageFile) {
+        log.info("imageFile: ", imageFile);
+        log.info("POST /api/board - 게시물 등록", board.getTitle());
+        Map<String, Object> res = new HashMap<>();
 
-        boardService.createBoard(board); //게시글 저장
+        try {
+            boardService.createBoard(board, imageFile);
+            res.put("success",true);
+            res.put("message","게시물을 성공적으로 등록되었습니다.");
+            res.put("boardId", board.getId());
+            log.info("게시물 등록 성공 - ID : {} ", board.getId());
 
-        //WebSocket을 통해 실시간 알림 전송
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("msg", "새로운 게시글이 작성되었습니다.");
-        notification.put("boardId", board.getId());
-        log.info("boardId,{}", board.getId());
-        notification.put("title", board.getTitle());
-        notification.put("writer", board.getWriter());
-        notification.put("timestamp", System.currentTimeMillis());
+            //WebSocket을 통해 실시간 알림 전송
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("msg", "새로운 게시글이 작성되었습니다.");
+            notification.put("boardId", board.getId());
+            log.info("boardId,{}", board.getId());
+            notification.put("title", board.getTitle());
+            notification.put("writer", board.getWriter());
+            notification.put("timestamp", System.currentTimeMillis());
 
-        // /topic/notifications 을 구독한 모든 클라이언트에게 전송
-        messagingTemplate.convertAndSend("/topic/notifications", notification);
-        log.info("새 게시글 작성 및 WebSocket 알림 전송 완료 : {}", board.getTitle()); // 개발자 회사 로그용
+            // /topic/notifications 을 구독한 모든 클라이언트에게 전송
+            messagingTemplate.convertAndSend("/topic/notifications", notification);
+            log.info("새 게시글 작성 및 WebSocket 알림 전송 완료 : {}", board.getTitle()); // 개발자 회사 로그용
+        } catch (Exception e) {
+            log.error("게시물 등록 실패 - 서버 오류", e);
+            res.put("success",false);
+            res.put("message","게시물 등록 중 오류가 발생했습니다.");
+        }
+
+
     }
 
 }

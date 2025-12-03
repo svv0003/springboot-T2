@@ -21,6 +21,8 @@ public class WebConfig implements WebMvcConfigurer {
     private String fileUploadPath;
     @Value("${file.product.upload.path}")
     private String productUploadPath;
+    @Value("${file.board.upload.path}")
+    private String boardUploadPath;
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
@@ -81,6 +83,8 @@ public class WebConfig implements WebMvcConfigurer {
          */
         registry.addResourceHandler("/product_images/**")
                 .addResourceLocations("file:"+productUploadPath+"/");
+        registry.addResourceHandler("/board_images/**")
+                .addResourceLocations("file:"+boardUploadPath+"/");
     }
 }
 
