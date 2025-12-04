@@ -30,15 +30,13 @@
     keyColumn        : 자동 생성되는 키의 컬럼명 지정(Oracle 에서 명시적으로 지정 권장)
     -->
     <insert id="insertBoard" parameterType="Board" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO board(title, content, writer)
-              VALUES (#{title}, #{content}, #{writer})
+        INSERT INTO board(title, content, writer, board_main_image, board_detail_image)
+              VALUES (#{title}, #{content}, #{writer}, #{boardMainImage}, #{boardDetailImage})
     </insert>
     <update id="addBoardImage" parameterType="Board">
         UPDATE board
-        SET title = #{title},
-        content = #{content},
-        writer = #{writer},
-        board_image = #{boardImage}
+        SET board_main_image = #{boardMainImage},
+            board_detail_image = #{boardDetailImage}
         WHERE id = #{id}
     </update>
     <update id="updateViewCount" parameterType="int">

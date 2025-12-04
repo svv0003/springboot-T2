@@ -154,8 +154,8 @@ public class FileUploadService {
         return "/product_images/" + productId + "/" + fileNameWithExtension;
     }
 
-    public String uploadBoardImage(MultipartFile file, int boardId, String imageType) throws IOException {
-        if(file.isEmpty()){
+    public String uploadBoardImages(MultipartFile file, int boardId, String imageType) throws IOException {
+        if(file == null || file.isEmpty()){
             throw new IOException("업로드할 파일이 없습니다.");
         }
         String boardFolder = boardUploadPath + "/" +  boardId;
@@ -167,7 +167,7 @@ public class FileUploadService {
             }
             log.info("업로드 디렉토리 생성 : {}", boardFolder);
         }
-        String fileNameWithExtension = imageType + getExtension(file);
+        String fileNameWithExtension = imageType + file.getOriginalFilename() + getExtension(file);
         Path savePath = Paths.get(boardFolder, fileNameWithExtension);
         try {
             Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
@@ -221,6 +221,9 @@ public class FileUploadService {
             } else if (filePath.startsWith("/product_images/")) {
                 String productPath = filePath.replace("/product_images/", "");
                 absolutePath = productUploadPath + "/" + productPath;
+            } else if (filePath.startsWith("/board_images/")) {
+                String boardPath = filePath.replace("/board_images/", "");
+                absolutePath = boardUploadPath + "/" + boardPath;
             } else {
                 log.warn("지원하지 않는 파일 경로 형식입니다. {}", filePath);
                 return false;

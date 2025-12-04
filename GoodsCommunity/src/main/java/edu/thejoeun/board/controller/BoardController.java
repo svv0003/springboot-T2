@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class BoardController {
     // serviceImpl 에서 재 사용된 기능을 활용할 수 있다.
     private final BoardService boardService;
     private final SchedulingService schedulingService;
-    private final SimpMessagingTemplate messagingTemplate; // WebSocket 메세지 전송
+    // private final SimpMessagingTemplate messagingTemplate; // WebSocket 메세지 전송
 
     // 전체 게시물 조회
     @GetMapping("/all")
@@ -49,15 +50,32 @@ public class BoardController {
         return schedulingService.getPopularBoards();
     }
 
-    @PostMapping  // api endpoint = /api/board 맨 위에 작성한 requestMapping 해당
-    public void createBoard(@RequestPart("board") Board board,
-                            @RequestPart(value="imageFile", required=false) MultipartFile imageFile) {
-        log.info("imageFile: ", imageFile);
-        log.info("POST /api/board - 게시물 등록", board.getTitle());
-        Map<String, Object> res = new HashMap<>();
 
+    /**
+     * 게시물 작성 (이미지 포함될 수 있고, 안 될 수도 있다.)
+     * @param board         게시물 정보
+     * @param mainImage     메인 이미지 (선택사항 -> null 전달 시 "이미지 없음")
+     * @param detailImage   상세 이미지 리스트 (최대 5개 / 선택사항 -> null 전달 시 "이미지 없음")
+     * @throws IOException
+     */
+    @PostMapping  // api endpoint = /api/board 맨 위에 작성한 requestMapping 해당
+//    public void createBoard(@RequestPart("board") Board board,
+//                            @RequestPart(value="imageFile", required=false) MultipartFile imageFile) {
+    public void createBoard(@RequestPart("board") Board board,
+                            @RequestPart(required = false) MultipartFile mainImage,
+                            @RequestPart(required = false) List<MultipartFile> detailImage) throws IOException {
+        log.info("게시물 작성 요청 - 제목 : {}, 작성자 : {}", board.getTitle(), board.getWriter());
+        if(detailImage == null) {
+            log.info("상세 이미지 개수 : {}", detailImage.size());
+        }
+        /*
+        try-catch 또는 throw IOException 작성한다.
+         */
+        boardService.createBoard(board, mainImage, detailImage);
+        log.info("게시물 작성 완료 - ID : {}", board.getId());
+        /*
         try {
-            boardService.createBoard(board, imageFile);
+            boardService.createBoard(board, mainImage, detailImage);
             res.put("success",true);
             res.put("message","게시물을 성공적으로 등록되었습니다.");
             res.put("boardId", board.getId());
@@ -80,10 +98,8 @@ public class BoardController {
             res.put("success",false);
             res.put("message","게시물 등록 중 오류가 발생했습니다.");
         }
-
-
+         */
     }
-
 }
 
 

@@ -2,7 +2,6 @@ package edu.thejoeun.board.model.mapper;
 
 import edu.thejoeun.board.model.dto.Board;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,14 +21,17 @@ public interface BoardMapper {
 
     /**
      * 작성한 게시물 저장
+     *
      * @param board 게시물 데이터 가져오기
      */
-    int insertBoard(Board board);
+    void insertBoard(Board board);
 
     /**
      * 게시물 사진 포함 업데이트
+     * @param board id, mainImage, detailImage 활용할 것이다.
+     *              int id, String board_main_image, String board_detail_image와 같은 형식으로도 매개변수 작성 가능하다.
      */
-    int addBoardImage(Board board);
+    void addBoardImage(Board board);
 
     /**
      * 게시물 데이터 제목, 내용, 저자 수정불가, 업데이트 일자 변경

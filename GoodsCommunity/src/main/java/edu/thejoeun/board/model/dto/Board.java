@@ -15,7 +15,12 @@ public class Board {
     private String title;
     private String content;
     private String writer;
-    private String boardImage;
+    private String boardMainImage;
+    private String boardDetailImage;
+    /*
+    DB 저장 시 List를 문자열 형태로 저장할 것이다.
+    ,로 구분지어서 하나의 문자열로 저장할 예정이다.
+     */
     private int viewCount;
     private String createdAt;
     private String updatedAt;
